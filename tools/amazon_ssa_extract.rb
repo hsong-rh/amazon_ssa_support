@@ -54,7 +54,7 @@ LOG_LEVELS = {
   Log4r::COPY  => "COPY"
 }
 
-::Module.send :include, LogDecorator::Logging::ClassMethods
+::Module.include(LogDecorator::Logging::ClassMethods)
 include LogDecorator::Logging
 $log = Log4r::Logger.new('toplog')
 LogDecorator.logger = $log
