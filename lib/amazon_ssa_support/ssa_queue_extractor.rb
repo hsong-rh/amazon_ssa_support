@@ -54,6 +54,9 @@ module AmazonSsaSupport
         @ssaq.delete_request(req)
       end
       _log.debug("Completed processing request - #{req_type}")
+    rescue => err
+      _log.error("#{err}")
+      _log.error(err.backtrace.join("\n"))
     end
 
     def do_extract(req)
@@ -65,8 +68,14 @@ module AmazonSsaSupport
         _log.debug("categories: #{categories.inspect}")
         _log.info("MiqEC2Vm: #{ec2_vm.class.name} - categories = [ #{categories.join(', ')} ]")
         categories.each do |cat|
-          xml = ec2_vm.extract(cat)
-          extract_reply.add_category(cat, xml)
+          begin
+            xml = ec2_vm.extract(cat)
+            extract_reply.add_category(cat, xml)
+          # continue to extract other category even when one failed
+          rescue => err
+            _log.error(err.to_s)
+            _log.error(err.backtrace.join("\n"))
+          end
         end
       rescue => err
         extract_reply.error = err.to_s
