@@ -3,7 +3,6 @@ require 'log_decorator'
 
 module AmazonSsaSupport
   class InstanceMetadata
-
     def initialize(version = 'latest')
       @base_url     = 'http://169.254.169.254/'
       @version      = version
@@ -31,11 +30,11 @@ module AmazonSsaSupport
     end
 
     def userdata
-      do_get(@url + "user-data", "user_data")
+      do_get("#{@url}user-data", "user_data")
     end
 
     def data(path)
-      do_get(@url + "#{path}", "get_data")
+      do_get("#{@url}#{path}", "get_data")
     end
 
     private

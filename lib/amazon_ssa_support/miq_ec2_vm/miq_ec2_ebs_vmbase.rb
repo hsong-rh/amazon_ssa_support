@@ -25,7 +25,7 @@ module AmazonSsaSupport
     end
 
     def unmount
-      @miq_vm.unmount unless @miq_vm.nil?
+      @miq_vm&.unmount
       unmap_volumes
     end
 
@@ -61,7 +61,7 @@ module AmazonSsaSupport
 
     def create_cfg
       diskid = 'scsi0:0'
-      mapdev = File.exists?('/host/dev/xvdf') ? '/host/dev/xvdf' : '/dev/xvdf'
+      mapdev = File.exist?('/host/dev/xvdf') ? '/host/dev/xvdf' : '/dev/xvdf'
       hardware = ''
       @block_device_keys.each do
         hardware += "#{diskid}.present = \"TRUE\"\n"

@@ -17,7 +17,7 @@ module AmazonSsaSupport
       @extractor_id = @aws_args[:extractor_id]
       @region       = @aws_args[:region]
 
-      @ec2          = @aws_args[:ec2] || Aws::EC2::Resource.new(region: @region)
+      @ec2          = @aws_args[:ec2] || Aws::EC2::Resource.new(:region => @region)
       @my_instance  = @ec2.instance(@extractor_id)
       @ssaq         = SsaQueue.new(@aws_args)
       @exit_code    = nil
@@ -55,7 +55,7 @@ module AmazonSsaSupport
       end
       _log.debug("Completed processing request - #{req_type}")
     rescue => err
-      _log.error("#{err}")
+      _log.error(err.to_s)
       _log.error(err.backtrace.join("\n"))
     end
 
@@ -83,7 +83,7 @@ module AmazonSsaSupport
         _log.error(err.backtrace.join("\n"))
       ensure
         extract_reply.reply
-        ec2_vm.unmount if ec2_vm
+        ec2_vm&.unmount
       end
     end
 
