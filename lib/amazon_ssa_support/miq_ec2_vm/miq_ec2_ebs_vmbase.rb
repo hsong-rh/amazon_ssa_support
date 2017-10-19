@@ -61,7 +61,7 @@ module AmazonSsaSupport
 
     def create_cfg
       diskid = 'scsi0:0'
-      mapdev = File.exist?('/host/dev/xvdf') ? '/host/dev/xvdf' : '/dev/xvdf'
+      mapdev = File.exist?('/host_dev/xvdf') ? '/host_dev/xvdf' : '/dev/xvdf'
       hardware = ''
       @block_device_keys.each do
         hardware += "#{diskid}.present = \"TRUE\"\n"
