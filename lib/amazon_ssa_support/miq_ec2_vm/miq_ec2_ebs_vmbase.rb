@@ -92,6 +92,7 @@ module AmazonSsaSupport
         sleep 5
         @ec2.client.wait_until(:volume_in_use, volume_ids: [vol.id])
         _log.info("    Volume #{vol.id} is attached!")
+        sleep 5
 
         @cfg += "#{diskid}.present = \"TRUE\"\n"
         @cfg += "#{diskid}.filename = \"#{get_mount_point}#{mapdev.split("/").last}\"\n"

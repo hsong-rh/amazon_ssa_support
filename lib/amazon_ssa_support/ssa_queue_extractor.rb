@@ -32,12 +32,12 @@ module AmazonSsaSupport
             process_request(req)
             start = Time.now.to_i # reset time counter after message is processed
             return @exit_code if @exit_code
-            _log.debug("Waiting for next message")
+            _log.info("Waiting for next message")
           end
         end
         break if (Time.now.to_i - start) >= timeout
       end
-      _log.debug("No messages received in #{timeout} seconds, agent shuts down!!!")
+      _log.info("No messages received in #{timeout} seconds, agent shuts down!!!")
       @exit_code = :shutdown
     end
 
@@ -65,8 +65,7 @@ module AmazonSsaSupport
       begin
         ec2_vm = MiqEC2Vm.new(req[:ec2_id], @my_instance, @ec2)
         categories = req[:categories] || CATEGORIES
-        _log.debug("categories: #{categories.inspect}")
-        _log.info("MiqEC2Vm: #{ec2_vm.class.name} - categories = [ #{categories.join(', ')} ]")
+        _log.info("categories: #{categories.inspect}")
         categories.each do |cat|
           begin
             xml = ec2_vm.extract(cat)
