@@ -94,7 +94,7 @@ module AmazonSsaSupport
         _log.info("    Volume #{vol.id} is attached!")
 
         @cfg += "#{diskid}.present = \"TRUE\"\n"
-        @cfg += "#{diskid}.filename = \"#{mapdev}\"\n"
+        @cfg += "#{diskid}.filename = \"#{get_mount_point}#{mapdev.split("/").last}\"\n"
         diskid.succ!
       end
       true
@@ -110,6 +110,10 @@ module AmazonSsaSupport
         @ec2.client.wait_until(:volume_deleted, volume_ids: [vol.id])
         _log.info("Volume #{vol.id} is deleted!")
       end
+    end
+
+    def get_mount_point
+      File.exist?('/host_dev/') ? '/host_dev/' : '/dev/'
     end
 
     def map_device_prefix
