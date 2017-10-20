@@ -10,6 +10,7 @@ module AmazonSsaSupport
       @block_device_keys = ebs_ids
       @volumes           = []
       @miq_vm            = nil
+      @cfg               = ''
     end
 
     def ebs_instance?
@@ -52,25 +53,10 @@ module AmazonSsaSupport
       return @miq_vm unless @miq_vm.nil?
 
       raise "#{self.class.name}.miq_vm: could not map volumes" unless map_volumes
-      map_dir = map_device_name.chop + "*"
-      `ls -l #{map_dir}`.each_line { |l| _log.debug("        #{l.chomp}") } if _log.debug?
-      cfg = create_cfg
-      cfg.each_line { |l| _log.debug("    #{l.chomp}") } if _log.debug?
+      `ls -l #{map_device_prefix}*`.each_line { |l| _log.debug("        #{l.chomp}") } if _log.debug?
+      @cfg.each_line { |l| _log.debug("    #{l.chomp}") } if _log.debug?
 
-      @miq_vm = MiqVm.new(cfg)
-    end
-
-    def create_cfg
-      diskid = 'scsi0:0'
-      mapdev = map_device_name
-      hardware = ''
-      @block_device_keys.each do
-        hardware += "#{diskid}.present = \"TRUE\"\n"
-        hardware += "#{diskid}.filename = \"#{mapdev}\"\n"
-        diskid.succ!
-        mapdev.succ!
-      end
-      hardware
+      @miq_vm = MiqVm.new(@cfg)
     end
 
     def create_volume(snap_id)
@@ -93,16 +79,23 @@ module AmazonSsaSupport
       volume
     end
 
-    def map_volumes(mapdev = '/dev/xvdf')
+    def map_volumes
+      diskid = 'scsi0:0'
+
       @block_device_keys.each do |k|
         vol = create_volume(k)
         return false if vol.nil?
+
+        mapdev = get_first_free_device
         _log.info("    Attaching volume #{vol.id} to #{mapdev}")
         vol.attach_to_instance(instance_id: @host_instance.id, device: mapdev)
         sleep 5
         @ec2.client.wait_until(:volume_in_use, volume_ids: [vol.id])
         _log.info("    Volume #{vol.id} is attached!")
-        mapdev.succ!
+
+        @cfg += "#{diskid}.present = \"TRUE\"\n"
+        @cfg += "#{diskid}.filename = \"#{mapdev}\"\n"
+        diskid.succ!
       end
       true
     end
@@ -119,8 +112,25 @@ module AmazonSsaSupport
       end
     end
 
-    def map_device_name
-      File.exist?('/host_dev/') ? '/host_dev/xvdf' : '/dev/xvdf'
+    def map_device_prefix
+      File.exist?('/host_dev/') ? '/host_dev/xvd' : '/dev/xvd'
+    end
+
+    def get_first_free_device(device_prefix = '/dev/xvd')
+      all_devices = []
+
+      # Aws EC2 starts from /dev/xvdf
+      ('f'..'z').each do |char|
+        all_devices << "#{device_prefix}#{char}"
+      end
+
+      used_devices = `ls #{device_prefix}*`.split("\n")
+      _log.debug("Mounted devices: #{used_devices}") if used_devices.any?
+
+      available_devices = all_devices - used_devices
+      raise "All devices are occupied!" if available_devices.empty?
+
+      available_devices[0]
     end
   end
 end
