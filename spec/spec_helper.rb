@@ -11,6 +11,5 @@ require 'amazon_ssa_support'
 RSpec.configure do |config|
   config.before(:suite) do
     $log = AmazonSsaSupport::RollingS3Logger.new("/dev/null")
-    _log = $log
   end
 end

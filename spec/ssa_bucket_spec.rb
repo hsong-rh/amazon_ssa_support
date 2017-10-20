@@ -5,6 +5,7 @@ require_relative 'aws_ssa_commons'
 
 describe AmazonSsaSupport::SsaBucket do
   before(:each) do
+    _log = $log
     config_aws_client_stub
   end
 
