@@ -51,7 +51,7 @@ module AmazonSsaSupport
     def miq_vm
       return @miq_vm unless @miq_vm.nil?
 
-      raise "#{self.class.name}.miq_vm: could not map volumes" unless map_volumes(map_device_name)
+      raise "#{self.class.name}.miq_vm: could not map volumes" unless map_volumes
       map_dir = map_device_name.chop + "*"
       `ls -l #{map_dir}`.each_line { |l| _log.debug("        #{l.chomp}") } if _log.debug?
       cfg = create_cfg
@@ -62,7 +62,7 @@ module AmazonSsaSupport
 
     def create_cfg
       diskid = 'scsi0:0'
-      mapdev = File.exist?('/host_dev/xvdf') ? '/host_dev/xvdf' : '/dev/xvdf'
+      mapdev = map_device_name
       hardware = ''
       @block_device_keys.each do
         hardware += "#{diskid}.present = \"TRUE\"\n"
@@ -71,18 +71,6 @@ module AmazonSsaSupport
         mapdev.succ!
       end
       hardware
-    end
-
-    def create_snapshot(vol_id)
-      return vol_id if ebs_image?
-
-      _log.info("    Creating snapshot of instance volume #{vol_id}")
-      snap = @ec2.create_snapshot(volume_id: vol_id, description: "SSA extract snapshot for instance: #{@ec2_obj.id}")
-      snap.wait_until_completed
-      snap.create_tags(tags: [{key: 'Name', value: 'SSA extract snapshot'}])
-      _log.info("    Snapshot #{snap.id} of instance volume #{vol_id} is created!")
-      @snapshots << snap
-      snap
     end
 
     def create_volume(snap_id)
@@ -123,15 +111,11 @@ module AmazonSsaSupport
       while (vol = @volumes.shift)
         attachment = vol.detach_from_instance(instance_id: @host_instance.id, force: true)
 
-        _log.debug("#{vol.id} is #{attachment.state}")
+        _log.info("#{vol.id} is #{attachment.state}")
         @ec2.client.wait_until(:volume_available, volume_ids: [vol.id])
         vol.delete
         @ec2.client.wait_until(:volume_deleted, volume_ids: [vol.id])
-        _log.debug("Volume #{vol.inspect} is deleted!")
-      end
-
-      while (snap = @snapshots.shift)
-        snap.delete
+        _log.info("Volume #{vol.id} is deleted!")
       end
     end
 
