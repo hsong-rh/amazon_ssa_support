@@ -51,8 +51,9 @@ module AmazonSsaSupport
     def miq_vm
       return @miq_vm unless @miq_vm.nil?
 
-      raise "#{self.class.name}.miq_vm: could not map volumes" unless map_volumes
-      `ls -l /dev/xvd*`.each_line { |l| _log.debug("        #{l.chomp}") } if _log.debug?
+      raise "#{self.class.name}.miq_vm: could not map volumes" unless map_volumes(map_device_name)
+      map_dir = map_device_name.chop + "*"
+      `ls -l #{map_dir}`.each_line { |l| _log.debug("        #{l.chomp}") } if _log.debug?
       cfg = create_cfg
       cfg.each_line { |l| _log.debug("    #{l.chomp}") } if _log.debug?
 
@@ -132,6 +133,10 @@ module AmazonSsaSupport
       while (snap = @snapshots.shift)
         snap.delete
       end
+    end
+
+    def map_device_name
+      File.exist?('/host_dev/') ? '/host_dev/xvdf' : '/dev/xvdf'
     end
   end
 end
