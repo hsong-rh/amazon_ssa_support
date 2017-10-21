@@ -86,16 +86,17 @@ module AmazonSsaSupport
         vol = create_volume(k)
         return false if vol.nil?
 
-        mapdev = get_first_free_device
-        _log.info("    Attaching volume #{vol.id} to #{mapdev}")
-        vol.attach_to_instance(instance_id: @host_instance.id, device: mapdev)
+        # In Docker, mapdev is like /host_dev/xvdf; 
+        mapdev = get_first_free_device(map_device_prefix)
+        _log.info("    Attaching volume #{vol.id} to #{mapdev.gsub("host_dev", "dev")}")
+        # Always attach to /dev block device, no matter inside docker or not
+        vol.attach_to_instance(instance_id: @host_instance.id, device: mapdev.gsub("host_dev", "dev"))
         sleep 5
         @ec2.client.wait_until(:volume_in_use, volume_ids: [vol.id])
         _log.info("    Volume #{vol.id} is attached!")
-        sleep 5
 
         @cfg += "#{diskid}.present = \"TRUE\"\n"
-        @cfg += "#{diskid}.filename = \"#{get_mount_point}#{mapdev.split("/").last}\"\n"
+        @cfg += "#{diskid}.filename = \"#{mapdev}\"\n"
         diskid.succ!
       end
       true
@@ -111,10 +112,6 @@ module AmazonSsaSupport
         @ec2.client.wait_until(:volume_deleted, volume_ids: [vol.id])
         _log.info("Volume #{vol.id} is deleted!")
       end
-    end
-
-    def get_mount_point
-      File.exist?('/host_dev/') ? '/host_dev/' : '/dev/'
     end
 
     def map_device_prefix
