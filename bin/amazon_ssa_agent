@@ -109,11 +109,11 @@ begin
     when :reboot
       _log.info("Rebooting")
       ehb.stop_heartbeat_loop
-      `nohup shutdown -t0 -r now &`
+      aws_args[:ec2].instance(extractor_id).stop
     when :shutdown
       _log.info("Shutting down")
       ehb.stop_heartbeat_loop
-      `nohup shutdown -t0 -h now &`
+      aws_args[:ec2].instance(extractor_id).stop
     end
   rescue => err
     _log.error("ERROR: #{err}")
