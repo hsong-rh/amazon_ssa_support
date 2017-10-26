@@ -72,6 +72,7 @@ begin
   extractor_doc           = im.data('dynamic/instance-identity/document')
   region                  = YAML.load(extractor_doc, :safe => true)["region"]
   aws_args[:extractor_id] = extractor_id
+  aws_args[:region]       = region
   timeout                 = aws_args[:agent_idle_period] || AmazonSsaSupport::DEFAULT_REQUEST_TIMEOUT
 
   aws_args[:ec2] = Aws::EC2::Resource.new(:region => region)
