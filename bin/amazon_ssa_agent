@@ -74,14 +74,14 @@ begin
   aws_args[:extractor_id] = extractor_id
   timeout                 = aws_args[:agent_idle_period] || AmazonSsaSupport::DEFAULT_REQUEST_TIMEOUT
 
+  aws_args[:ec2] = Aws::EC2::Resource.new(:region => region)
+  aws_args[:sqs] = Aws::SQS::Resource.new(:region => region)
+  aws_args[:s3]  = Aws::S3::Resource.new(:region => region)
+
   $log.formatter = lambda do |severity, datetime, progname, msg|
     "#{severity} [#{datetime.utc.iso8601(6)}#{extractor_id && " #{extractor_id}"}] -- #{progname}: #{msg}\n"
   end
   $log.aws_args = aws_args
-
-  aws_args[:ec2] = Aws::EC2::Resource.new(:region => region)
-  aws_args[:sqs] = Aws::SQS::Resource.new(:region => region)
-  aws_args[:s3]  = Aws::S3::Resource.new(:region => region)
 
   #
   # Initialize and enter the heartbeat loop.
